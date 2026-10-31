@@ -2,10 +2,20 @@
  * Visits a gradeable and wait for JS to load so we can see if the clear all files button is enabled.
  * @param {string} gradeableName the name of the gradeable we are visiting
  */
+
 function visitGradeable(gradeableName) {
     const course = Cypress.expose('course');
+
+    // Temporary diagnostic: monitor drag-and-drop.js
+    cy.intercept('GET', '**/drag-and-drop.js*').as('dragAndDropScript');
+
     cy.visit([course, 'gradeable', gradeableName]);
-    // wait 10 seconds for client JS to load - reduces flakyness
+
+    cy.wait('@dragAndDropScript').then((interception) => {
+        expect(interception.response.statusCode).to.eq(200);
+    });
+
+    // Wait for the page's time-remaining element
     cy.get('[data-testid="gradeable-time-remaining-text"]', { timeout: 10000 }).should('contain.text', 'days');
 }
 
