@@ -11,8 +11,8 @@ function visitGradeable(gradeableName) {
 
     cy.visit([course, 'gradeable', gradeableName]);
 
-    cy.wait('@dragAndDropScript').then((interception) => {
-        expect(interception.response.statusCode).to.eq(200);
+    cy.window().then((win) => {
+        expect(win.createArray, 'createArray function').to.be.a('function');
     });
 
     // Wait for the page's time-remaining element
