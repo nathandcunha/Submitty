@@ -2,10 +2,31 @@
  * Visits a gradeable and wait for JS to load so we can see if the clear all files button is enabled.
  * @param {string} gradeableName the name of the gradeable we are visiting
  */
+
 function visitGradeable(gradeableName) {
     const course = Cypress.expose('course');
+    const failedScripts = [];
+    cy.on('fail', (error) => {
+        error.message += `\nFailed script URLs: ${failedScripts.join(', ') || 'None detected'}`;
+        throw error;
+    });
+
+    cy.on('window:before:load', (win) => {
+        win.addEventListener('error', (event) => {
+            if (event.target instanceof win.HTMLScriptElement) {
+                failedScripts.push(event.target.src);
+            }
+        }, true);
+    });
+
     cy.visit([course, 'gradeable', gradeableName]);
-    // wait 10 seconds for client JS to load - reduces flakyness
+
+    cy.then(() => {
+        if (failedScripts.length > 0) {
+            throw new Error(`Failed JavaScript resources: ${failedScripts.join(', ')}`);
+        }
+    });
+
     cy.get('[data-testid="gradeable-time-remaining-text"]', { timeout: 10000 }).should('contain.text', 'days');
 }
 
